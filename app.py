@@ -2,12 +2,12 @@ import streamlit as st
 from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
 import av
 import cv2
-from project_logic.angle_comparer import angle_comparer
+from angle_comparer import angle_comparer
 import tensorflow as tf
 import numpy as np
 import tensorflow_hub as hub
 import joblib
-from project_logic.best_poses import *
+from best_poses import *
 import time
 from collections import deque
 from PIL import Image
@@ -75,10 +75,10 @@ with header_container:
 
 
 # Load Model and Scaler
-interpreter = tf.lite.Interpreter(model_path="models/3.tflite")
+interpreter = tf.lite.Interpreter(model_path="model_creator/3.tflite")
 interpreter.allocate_tensors()
-model = tf.keras.models.load_model('notebooks/24112023_sub_model.h5')
-scaler = joblib.load('notebooks/scaler.pkl')
+model = tf.keras.models.load_model('model_creator/24112023_sub_model.h5')
+scaler = joblib.load('model_creator/scaler.pkl')
 
 # Define necessary dictionaries
 
