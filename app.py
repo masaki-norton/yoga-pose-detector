@@ -20,6 +20,8 @@ import queue
 # print('setting the page config')
 # st.set_page_config(layout="wide")
 
+tf.get_logger().setLevel("ERROR")
+
 #Remove the menu button and Streamlit icon on the footer
 hide_default_format = """
        <style>
@@ -27,7 +29,6 @@ hide_default_format = """
        footer {visibility: hidden;}
        </style>
        """
-print('hiding default menu')
 st.markdown(hide_default_format, unsafe_allow_html=True)
 
 #Change font to Catamaran
@@ -167,7 +168,6 @@ def get_score_eval(score: float):
 def draw_key_points(frame, keypoints, conf_threshold):
     max_dim = max(frame.shape)
     shaped = np.squeeze(np.multiply(keypoints, [max_dim,max_dim,1]))
-    print(int(shaped[0][0]))
     for kp in shaped:
         ky, kx, kp_conf = kp
         if kp_conf > conf_threshold:
