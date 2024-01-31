@@ -20,8 +20,6 @@ import queue
 # print('setting the page config')
 # st.set_page_config(layout="wide")
 
-tf.get_logger().setLevel("ERROR")
-
 #Remove the menu button and Streamlit icon on the footer
 hide_default_format = """
        <style>
