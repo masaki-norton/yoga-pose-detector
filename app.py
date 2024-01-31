@@ -27,7 +27,7 @@ hide_default_format = """
 print('hiding default menu')
 st.markdown(hide_default_format, unsafe_allow_html=True)
 
-#Change font to Catamaran
+#Change font to Catamaran type
 streamlit_style = """
             <style>
             @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@100;200;300;400;500;600;700;800;900&display=swap');
@@ -39,10 +39,9 @@ streamlit_style = """
             """
 st.markdown(streamlit_style, unsafe_allow_html=True)
 
-header_container = st.container()
-with header_container:
-    # Centralize the title 'Hatha Project'
-    st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Practice Session 🧘‍♀️</h1>", unsafe_allow_html=True)
+
+# Centralize the title 'Hatha Project'
+st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Practice Session 🧘‍♀️</h1>", unsafe_allow_html=True)
 
 
 # Load Model and Scaler
@@ -52,7 +51,6 @@ model = tf.keras.models.load_model('model_creator/24112023_sub_model.h5')
 scaler = joblib.load('model_creator/scaler.pkl')
 
 # Define necessary dictionaries
-
 label_mapping = {
     0: 'Downdog',
     1: 'Goddess',
@@ -113,12 +111,13 @@ joint_dict = {'landmarks_left_elbow': 'left elbow',
               }
 
 
-# Xx
-result_queue: "queue.Queue[List[Detection]]" = queue.Queue()
+# The result_queue variable will store the value for each iteration of the callback. These are the
+# values that will be later printed below the livestream. str and dict are put as hints/expectations of the values.
+result_queue: queue.Queue[str | dict] = queue.Queue()
 
 # ==================== Functions definition and Variables =====================
 
-# Defining functions for the
+# Defining functions for the score evaluation for the live pose.
 def get_score_eval(score: float):
     if score <= 0.6:
         return "bad"
@@ -127,14 +126,9 @@ def get_score_eval(score: float):
     else:
         return "perfect!"
 
-def get_score_eval(score: float):
-    if score <= 0.6:
-        return "bad"
-    elif score <= 0.85:
-        return "good"
-    else:
-        return "perfect!"
-
+# This function draws the key points on key bodyparts. These are then used to
+# calculate body angles with the function below. In the live video, only the
+# bodyparts that construct the worst angle are shown.
 def draw_key_points(frame, keypoints, conf_threshold):
     max_dim = max(frame.shape)
     shaped = np.squeeze(np.multiply(keypoints, [max_dim,max_dim,1]))
@@ -145,6 +139,9 @@ def draw_key_points(frame, keypoints, conf_threshold):
             cv2.circle(frame,(int(kx), int(ky)-80), 1, (90,195,217), 15)
     return frame
 
+
+# This function draws lines between the key bodyparts. In the live video, only the
+# bodyparts that constructi the worst angle are shown.
 def draw_connections(frame, keypoints, edges, confidence_threshold):
     max_dim = max(frame.shape)
     shaped = np.squeeze(np.multiply(keypoints, [max_dim,max_dim,1]))
@@ -157,23 +154,27 @@ def draw_connections(frame, keypoints, edges, confidence_threshold):
         if (c1 > confidence_threshold) & (c2 > confidence_threshold):
             cv2.line(frame, (int(x1), int(y1)-80), (int(x2), int(y2)-80), (88, 235, 52), 3)
 
+
+
+# This function takes a (3,17) landmarks array based on the body position on
+# livestream and returns the softmax output from the multiclass classification pose NN.
 def get_pose(landmarks: list):
-    """
-    This function takes a (3,17) landmarks array and returns the softmax output
-    from the multiclass classification pose NN.
-    """
-    # Prep input before feeding to the model.
+
+    # Preparation of input before feeding the model.
     lms_51 = np.array(landmarks).reshape(51).tolist()
     landmarks_array = np.array(lms_51).reshape(1, -1)
     landmarks_array = np.delete(landmarks_array, np.arange(2, landmarks_array.size, 3))
     landmarks_array = landmarks_array[np.newaxis, :]
     scaled_landmarks = scaler.transform(landmarks_array)
 
-    # Feed landmarks_array to model to get softmax output
+    # Feed landmarks_array to model to get softmax output.
     prediction = model.predict(scaled_landmarks)
     return prediction
 
-# Initialize global variables for the sliding window
+# These are the variables that contain a list of values that are used to
+# calculate the average for each shown value. Each list is as long as the
+# window size
+
 window_size = 15  # Number of frames to average over
 score_angles_history = deque(maxlen=window_size)
 angle_diff_history = deque(maxlen=window_size)
@@ -184,6 +185,10 @@ pose_history = deque(maxlen=window_size)
 
 # Defining the angle_comparer to create video and overlay
 def callback(frame):
+
+    # the global command takes the created variables from outside the function
+    # and makes them valid on the inside. All changes to them inside this
+    # function will affect the variable outside the function as well.
     global worst_name_history, angle_diff_history, avg_percentage_diff_history, score_angles_history, average_score_history
 
     s_time = time.time()
