@@ -201,7 +201,7 @@ def callback(frame):
     img = tf.image.resize_with_pad(np.expand_dims(image, axis=0), 192, 192)
     input_image = tf.cast(img, dtype=tf.float32)
 
-    We need to load
+
     input_details = interpreter.get_input_details()
     interpreter.set_tensor(input_details[0]["index"], input_image.numpy())
 
@@ -218,7 +218,7 @@ def callback(frame):
     pose_output = get_pose(keypoints_with_scores[0][0])
     target_pose = label_mapping[np.argmax(pose_output)]
     if (keypoints_with_scores[0][0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
-        target_pose = "...still thinking..."
+        target_pose = "do a pose..."
 
     result_queue.put(target_pose)
     pose_history.append(target_pose)
@@ -273,10 +273,20 @@ def load_and_cache_image(image_path):
 
 best_all_poses = load_and_cache_image('mika_poses/all_poses.jpeg')
 
+
 # Container for Images
 images_container = st.container()
 with images_container:
     st.image(best_all_poses, use_column_width=True)
+
+labels_placeholder = st.empty()
+angle_perc = st.empty()
+timecount =  st.empty()
+
+col1, col2, col3 = st.columns(3)
+column1 = col1.empty()
+column2 = col2.empty()
+column3 = col3.empty()
 
 video_analysis_container = st.container()
 with video_analysis_container:
@@ -290,14 +300,7 @@ with video_analysis_container:
         media_stream_constraints={"video": True, "audio": False}  # Disable audio
     )
 
-labels_placeholder = st.empty()
-angle_perc = st.empty()
-timecount =  st.empty()
 
-col1, col2, col3 = st.columns(3)
-column1 = col1.empty()
-column2 = col2.empty()
-column3 = col3.empty()
 
 # Add the footer with copyright information
 st.markdown("<div style='text-align: center; color: grey;'>Copyright © The Hatha Team 2023</div>", unsafe_allow_html=True)
@@ -326,10 +329,10 @@ while True:
         result = "perfect!"
         result_color = "green"
 
-    column1.markdown(f"<p style='font-size:50px; color:black;'>Pose</p>\n<p style='font-size:35px; font-weight:bold; color:black;'>{your_pose}</p>", unsafe_allow_html=True)
+    column1.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: left; color:black;'>Pose</p>\n<p style='font-size:30px; font-weight:bold; text-align: left; color:black;'>{your_pose}</p>", unsafe_allow_html=True)
 
     # Show label and result in black
-    column2.markdown(f"<p style='font-size:50px; color:black;'>Score</p>\n<p style='font-size:35px; font-weight:bold; color:{result_color};'>{result}</p>", unsafe_allow_html=True)
+    column2.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: center; color:black;'>Score</p>\n<p style='font-size:30px; font-weight:bold; text-align: center; color:{result_color};'>{result}</p>", unsafe_allow_html=True)
 
     # # Show label and result in black
-    column3.markdown(f"<p style='font-size:50px; color:black;'>Fix your</p>\n<p style='font-size:35px; font-weight:bold; color:red;'>{fix_your}</p>", unsafe_allow_html=True)
+    column3.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: right; color:black;'>Fix your</p>\n<p style='font-size:30px; font-weight:bold; text-align: right; color:red;'>{fix_your}</p>", unsafe_allow_html=True)
