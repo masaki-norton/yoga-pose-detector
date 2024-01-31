@@ -193,11 +193,17 @@ def callback(frame):
 
     s_time = time.time()
     """ ======== 1. Movenet to get Landmarks ======== """
+
+    # the variable image is an array depiction of the livestream feed frame in
+    # colour arrangement bgr24.
     image = frame.to_ndarray(format="bgr24")
 
+    # The image gets resized to for interpreter and the array type changed to
+    # float.
     img = tf.image.resize_with_pad(np.expand_dims(image, axis=0), 192, 192)
     input_image = tf.cast(img, dtype=tf.float32)
 
+    We need to load
     input_details = interpreter.get_input_details()
     interpreter.set_tensor(input_details[0]["index"], input_image.numpy())
 
