@@ -42,3 +42,10 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 This project is open source, do let me know though when used for pure interest.
+
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to improve. Please open a separate branch with an indicative name.
+
+## License
+This project is open source, do let me know though when used for pure interest.
