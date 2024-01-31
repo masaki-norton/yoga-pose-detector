@@ -1,23 +1,26 @@
+# Standard library imports
+import time
+from PIL import Image
+
+# Related third-party imports
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
 import av
 import cv2
-from angle_comparer import angle_comparer
 import tensorflow as tf
 import numpy as np
-import tensorflow_hub as hub
 import joblib
-from best_poses import *
-import time
-from collections import deque
-from PIL import Image
 import queue
+from collections import deque
+from streamlit_webrtc import webrtc_streamer
 
+# Local imports
+from angle_comparer import angle_comparer
+from best_poses import *
 
 # ======================== Setup and Model Loading =========================
 
 # Make page wide (remove default wasted whitespace)
-#Remove the menu button and Streamlit icon on the footer
+# Remove the menu button and Streamlit icon on the footer
 hide_default_format = """
        <style>
        #MainMenu {visibility: hidden; }
@@ -26,7 +29,7 @@ hide_default_format = """
        """
 st.markdown(hide_default_format, unsafe_allow_html=True)
 
-#Change font to Catamaran type
+# Change font to Catamaran type
 streamlit_style = """
             <style>
             @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@100;200;300;400;500;600;700;800;900&display=swap');
@@ -38,10 +41,8 @@ streamlit_style = """
             """
 st.markdown(streamlit_style, unsafe_allow_html=True)
 
-
 # Centralize the title 'Hatha Project'
 st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Practice Session 🧘‍♀️</h1>", unsafe_allow_html=True)
-
 
 # Load Model and Scaler
 interpreter = tf.lite.Interpreter(model_path="model_creator/3.tflite")
@@ -152,8 +153,6 @@ def draw_connections(frame, keypoints, edges, confidence_threshold):
         if (c1 > confidence_threshold) & (c2 > confidence_threshold):
             cv2.line(frame, (int(x1), int(y1)-80), (int(x2), int(y2)-80), (88, 235, 52), 3)
 
-
-
 # This function takes a (3,17) landmarks array based on the body position on
 # livestream and returns the softmax output from the multiclass classification pose NN.
 def get_pose(landmarks: list):
@@ -201,7 +200,6 @@ def callback(frame):
     img = tf.image.resize_with_pad(np.expand_dims(image, axis=0), 192, 192)
     input_image = tf.cast(img, dtype=tf.float32)
 
-    We need to load
     input_details = interpreter.get_input_details()
     interpreter.set_tensor(input_details[0]["index"], input_image.numpy())
 
@@ -261,8 +259,6 @@ def callback(frame):
     mirrored_image = cv2.flip(image, 1)
 
     return av.VideoFrame.from_ndarray(mirrored_image, format="bgr24")
-
-
 
 
 # ==================== Actual UI output =====================
