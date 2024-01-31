@@ -17,9 +17,6 @@ import queue
 # ======================== Setup and Model Loading =========================
 
 # Make page wide (remove default wasted whitespace)
-# print('setting the page config')
-# st.set_page_config(layout="wide")
-
 #Remove the menu button and Streamlit icon on the footer
 hide_default_format = """
        <style>
@@ -44,34 +41,8 @@ st.markdown(streamlit_style, unsafe_allow_html=True)
 
 header_container = st.container()
 with header_container:
-
     # Centralize the title 'Hatha Project'
     st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Practice Session 🧘‍♀️</h1>", unsafe_allow_html=True)
-    # st.markdown("<h3 style='text-align: center; color: black;'>Supporting affordable yoga practice at home</h3>", unsafe_allow_html=True)
-    # st.markdown("Some blurb about the project, we're awesome we're cool etc etc Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", unsafe_allow_html=True)
-
-    # Define the layout for the 'How it works' section
-
-# # Container for 'How it works' section
-# how_it_works_container = st.container()
-# with how_it_works_container:
-#     col1, col2, col3 = st.columns([1,1,1])
-#     st.markdown("""
-#     <style>
-#     .big-font {
-#         font-size:30px !important;
-#     }
-#     </style>
-#     """, unsafe_allow_html=True)
-#     with col1:
-#         st.write("<p class = big-font>Step 1:</p>", unsafe_allow_html=True)
-#         st.markdown("User holds a yoga pose in front of the camera")
-#     with col2:
-#         st.write("<p class = big-font>Step 2:</p>", unsafe_allow_html=True)
-#         st.markdown("Hatha Support recognizes the pose")
-#     with col3:
-#         st.write("<p class = big-font>Step 3:</p>", unsafe_allow_html=True)
-#         st.markdown("User receives instant feedback on the pose")
 
 
 # Load Model and Scaler
@@ -202,46 +173,6 @@ def get_pose(landmarks: list):
     prediction = model.predict(scaled_landmarks)
     return prediction
 
-# This is for vertical bars and working
-# def draw_bars(frame, angle_diffs, max_value=1.0, bar_width=40, bar_spacing=20):
-    start_x, start_y = 50, 400  # Starting position of the first bar
-    for i, angle_diff in enumerate(angle_diffs):
-        # Normalize the angle difference to a value between 0 and 1
-        normalized_diff = angle_diff / max_value
-        bar_height = int(normalized_diff * 100)  # Scale the bar height
-        end_x = start_x + bar_width
-        end_y = start_y - bar_height
-
-        # Draw the bar
-        cv2.rectangle(frame, (start_x, start_y), (end_x, end_y), (100, 100, 255), -1)
-
-        # Draw the text (optional)
-        cv2.putText(frame, f"{angle_diff:.1f}", (start_x, start_y - bar_height - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-
-        # Update the start_x position for the next bar
-        start_x += bar_width + bar_spacing
-
-def draw_bars(frame, angle_diffs, max_value=1.0, bar_height=28, bar_spacing=2, max_bar_length=200):
-    start_y, start_x = 95, 0  # Starting position of the first bar at the top-left
-    for i, angle_diff in enumerate(angle_diffs):
-        # Normalize the angle difference to a value between 0 and 1
-        normalized_diff = angle_diff / max_value
-        bar_length = int(normalized_diff * max_bar_length)  # Scale the bar length to the desired value
-
-        # Ensure the bar length does not exceed max_bar_length
-        bar_length = min(bar_length, max_bar_length)
-
-        # Calculate the top-left and bottom-right corners of the bar
-        top_left_corner = (start_x, start_y + (bar_height + bar_spacing) * i)
-        bottom_right_corner = (start_x + bar_length, start_y + bar_height + (bar_height + bar_spacing) * i)
-
-        # Draw the bar
-        cv2.rectangle(frame, top_left_corner, bottom_right_corner, (100, 100, 255), -1)
-
-        # Draw the text (optional)
-        # cv2.putText(frame, f"{angle_diff:.1f}", (start_x + bar_length + 5, start_y + bar_height * 0.7 + (bar_height + bar_spacing) * i), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-
-
 # Initialize global variables for the sliding window
 window_size = 15  # Number of frames to average over
 score_angles_history = deque(maxlen=window_size)
@@ -284,36 +215,6 @@ def callback(frame):
     pose_history.append(target_pose)
     # print(pose_history)
 
-    """ ======== 2.1. Text and Rectangle for Pose prediction ======== """
-    # Coordinates where the text will appear
-    # text_position = (180, 34)
-
-    # # Font settings
-    # font = cv2.FONT_HERSHEY_COMPLEX
-    # font_scale = 1
-    # font_color = (0, 0, 0)  # White color
-    # line_type = 2
-
-    # # which text??
-    # text = target_pose
-    # text_bottom_left = text_position
-
-    # # Set the fixed-size rectangle dimensions
-    # box_width = 300
-    # box_height = 50
-
-    # # Set the top-left corner of the rectangle
-    # rectangle_top_left = (170, -4)  # You can change this to position the box anywhere on the image
-
-    # Calculate the bottom-right corner of the rectangle based on the fixed size
-    # rectangle_bottom_right = (rectangle_top_left[0] + box_width, rectangle_top_left[1] + box_height)
-
-    # Draw the fixed-size rectangle on the image
-    # rectangle_color = (0, 255, 0)  # Green color for the rectangle
-    # rectangle_thickness = -1  # Thickness of the rectangle borders
-
-    # cv2.rectangle(image, rectangle_top_left, rectangle_bottom_right, rectangle_color, rectangle_thickness)
-    # cv2.putText(image, text, text_position, font, font_scale, font_color, line_type)
 
     """ ======== 3. Scoring of Pose ====+===="""
 
@@ -327,10 +228,6 @@ def callback(frame):
     worst_points = lm_points[index_of_worst]
     result_queue.put(lm_list[index_of_worst])
     average_score_history.append(average_score)
-
-    # cv2.putText(image, f"Score (avg): {test_angle_percentage_diff}", (50, 100), font, font_scale, font_color, line_type)
-
-    # print(f"Runtime is {round((time.time() - s_time)*1000, 2)}")
 
     worst_kps = []
     for i in lm_points[index_of_worst]:
@@ -353,15 +250,10 @@ def callback(frame):
         draw_connections(image, keypoints_with_scores, worst_edges, 0.2)
 
     mirrored_image = cv2.flip(image, 1)
-    # cv2.rectangle(mirrored_image, rectangle_top_left, rectangle_bottom_right, rectangle_color, rectangle_thickness)
-    # cv2.putText(mirrored_image, text, text_position, font, font_scale, font_color, line_type)
-
 
     return av.VideoFrame.from_ndarray(mirrored_image, format="bgr24")
 
 
-    # print(f"Runtime is {round((time.time() - s_time)*1000, 2)}")
-    # return av.VideoFrame.from_ndarray(image, format="bgr24")
 
 
 # ==================== Actual UI output =====================
@@ -372,37 +264,10 @@ def load_and_cache_image(image_path):
 
 best_all_poses = load_and_cache_image('mika_poses/all_poses.jpeg')
 
-# best_hightree = load_and_cache_image('mika_poses/best_hightree.jpeg')
-# best_goddess = load_and_cache_image('mika_poses/best_goddess.jpeg')
-# best_highplank = load_and_cache_image('mika_poses/best_highplank.jpeg')
-# best_downdog = load_and_cache_image('mika_poses/best_downdog.jpeg')
-# best_warrior = load_and_cache_image('mika_poses/best_warrior.jpeg')
-
 # Container for Images
 images_container = st.container()
 with images_container:
     st.image(best_all_poses, use_column_width=True)
-
-
-    # # Code for Images
-
-    # # Show the poses with the loading spinner
-    # pose_col_1, pose_col_2, pose_col_3, pose_col_4, pose_col_5 = st.columns([1, 1, 1, 1, 1])
-
-    # with pose_col_1:
-    #     st.image(best_hightree, use_column_width=True, caption='High Tree')
-
-    # with pose_col_2:
-    #     st.image(best_goddess, use_column_width=True, caption='Goddess')
-
-    # with pose_col_3:
-    #     st.image(best_highplank, use_column_width=True, caption='High Plank')
-
-    # with pose_col_4:
-    #     st.image(best_downdog, use_column_width=True, caption='Downward Dog')
-
-    # with pose_col_5:
-    #     st.image(best_warrior, use_column_width=True, caption='Warrior')
 
 video_analysis_container = st.container()
 with video_analysis_container:
@@ -431,26 +296,15 @@ st.markdown("<div style='text-align: center; color: grey;'>Copyright © The Hath
 
 while True:
     s_time = time.time()
-    # print(result_queue.get())
-    # print(max(result_queue.get()))
-    # worst = joint_dict[result_queue.get()]
     result = max(result_queue.get())
     result2 = max(result_queue.get())
     result3 = max(result_queue.get())
-    # labels_placeholder.write(f"results: {result}")
-    # angle_perc.write(f"FIX YOUR {max(set(worst_name_history), key=worst_name_history.count)}")
-    # timecount.write(f"Runtime is {round((time.time() - s_time)*1000, 2)}")
     total_score = sum(average_score_history)  # Sum up the values in the deque
     average_score = total_score / window_size
 
     your_pose = max(set(pose_history))
     fix_your = joint_dict[max(set(worst_name_history), key=worst_name_history.count)]
     your_score = get_score_eval(average_score)
-    # column1.write(f"Score: {sliding_avg_score}")
-    # column1.subheader(f"Your pose: {max(set(pose_history))}")
-    # column2.subheader(f"Fix your: {joint_dict[max(set(worst_name_history), key=worst_name_history.count)]}")
-    # column3.subheader(f"Your score: {get_score_eval(average_score)}")
-    # column3.title(f"Runtime is {round((time.time() - s_time)*1000, 2)}")
 
     # If statements for the text colours
     if average_score <= 0.6:
