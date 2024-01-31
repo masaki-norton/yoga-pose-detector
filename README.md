@@ -28,10 +28,6 @@ Hatha Support is a Yoga pose correction tool that recognizes the Yoga pose you d
 - [Streamlit](https://streamlit.io/) - Deployment
 
 
-## Acknowledgements
-The project was inspired by weekly Yoga practice with our Yoga teacher Mika Saito, who was also the model for our best poses we used as a reference for the correction mechanism.
-**Website**: www.mikayogaacro.com , **Instagram**: (www.instagram.com/mikayoga.acro)
-
 ## Team Members
 - Lennart Janssen  (www.linkedin.com/in/lennijanssen) (https://github.com/lennijanssen)
 - Masaki Norton    (www.linkedin.com/in/masaki-norton)
