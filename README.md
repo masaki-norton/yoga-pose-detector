@@ -38,15 +38,9 @@ The project was inspired by weekly Yoga practice with our Yoga teacher Mika Sait
 - Masaki Norton    (www.linkedin.com/in/masaki-norton)
 - Maria Miranda    (https://github.com/mirmachr)
 
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to improve. Please open a separate branch with an indicative name.
-
 ## License
 This project is open source, do let me know though when used for pure interest.
 
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to improve. Please open a separate branch with an indicative name.
-
-## License
-This project is open source, do let us know though when used for pure interest.
