@@ -4,3 +4,5 @@ raw_data/
 *.pyc
 .__pycache__/
 new_pose_data/
+webscraper.py
+yoga82scraper.py
