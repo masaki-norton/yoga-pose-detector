@@ -5,5 +5,3 @@ raw_data/
 .__pycache__/
 new_pose_data/
 webscraper.py
-yoga82scraper.py
-selected_poses/
