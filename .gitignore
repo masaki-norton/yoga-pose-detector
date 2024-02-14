@@ -5,3 +5,4 @@ raw_data/
 .__pycache__/
 new_pose_data/
 webscraper.py
+selected_poses/
