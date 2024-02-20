@@ -168,17 +168,84 @@ def get_pose(landmarks: list):
     prediction = model.predict(scaled_landmarks)
     return prediction
 
+def flow_maker(current_index, pose_start_time, flow_list, threshold=2):
+    """
+    Advances the flow to the next pose if the current pose is held for more than 'threshold' seconds.
+
+    Args:
+    - current_index: The index of the current pose in the flow_list.
+    - pose_start_time: The time (from time.time()) when the current pose started.
+    - flow_list: A list of poses in the sequence.
+    - threshold: The number of seconds a pose must be held to trigger a change.
+
+    Returns:
+    - Tuple of (current_index, pose_start_time) representing the updated pose index and start time.
+    """
+    # Calculate how long the current pose has been held
+    current_time = time.time()
+    pose_duration = current_time - pose_start_time
+
+    if pose_duration > threshold:
+        # Pose held for more than threshold seconds, advance to the next pose
+        current_index = (current_index + 1) % len(flow_list)  # Cycle through the flow_list
+        pose_start_time = current_time  # Reset the pose start time to now
+
+    return current_index, pose_start_time
+
+
+def update_pose_start_time_if_changed(current_pose, new_pose, pose_start_time):
+    """
+    Updates the start time for a pose if the current pose has changed.
+
+    Args:
+    - current_pose: The current pose being tracked.
+    - new_pose: The newly identified pose.
+    - pose_start_time: The time at which the current pose started.
+
+    Returns:
+    - Tuple of (current_pose, pose_start_time), potentially updated.
+    """
+    if new_pose != current_pose:
+        current_pose = new_pose
+        pose_start_time = time.time()  # Reset the pose start time to now
+    return current_pose, pose_start_time
+
+
+def find_next_pose_in_flow(your_pose, flow_list):
+    """
+    Determines the next pose in the sequence after your_pose in the flow_list.
+
+    Args:
+    - your_pose: The current pose being held.
+    - flow_list: The list of poses in the flow.
+
+    Returns:
+    - The next pose in the sequence.
+    """
+    try:
+        current_index = flow_list.index(your_pose)
+        next_index = (current_index + 1) % len(flow_list)  # Ensure cycling through the list
+        return flow_list[next_index]
+    except ValueError:
+        # your_pose not in flow_list, return a default or make a decision
+        return flow_list[0]
+
 # These are the variables that contain a list of values that are used to
 # calculate the average for each shown value. Each list is as long as the
 # window size
 
-window_size = 15  # Number of frames to average over
+window_size = 60  # Number of frames to average over
 score_angles_history = deque(maxlen=window_size)
 angle_diff_history = deque(maxlen=window_size)
 avg_percentage_diff_history = deque(maxlen=window_size)
 worst_name_history = deque(maxlen=window_size)
 average_score_history = deque(maxlen=window_size)
 pose_history = deque(maxlen=window_size)
+flow_list = ['Goddess', 'Warrior', 'Downdog', 'Plank', 'Warrior']
+current_pose = None
+next_pose = None
+current_index = 0
+pose_start_time = time.time()
 
 # Defining the angle_comparer to create video and overlay
 def callback(frame):
@@ -186,7 +253,8 @@ def callback(frame):
     # the global command takes the created variables from outside the function
     # and makes them valid on the inside. All changes to them inside this
     # function will affect the variable outside the function as well.
-    global worst_name_history, angle_diff_history, avg_percentage_diff_history, score_angles_history, average_score_history
+    global current_pose, next_pose, pose_start_time, worst_name_history, angle_diff_history, avg_percentage_diff_history, score_angles_history, average_score_history
+
 
     s_time = time.time()
     """ ======== 1. Movenet to get Landmarks ======== """
@@ -223,7 +291,16 @@ def callback(frame):
     # print(pose_history)
 
 
-    """ ======== 3. Scoring of Pose ====+===="""
+    """ ======== 3. Flow Indication ========"""
+
+    current_index, pose_start_time = flow_maker(current_index, pose_start_time, flow_list, threshold=2)
+
+    current_pose = flow_list[current_index]
+    next_pose = flow_list[(current_index + 1) % len(flow_list)]
+
+
+
+    """ ======== 4. Scoring of Pose ========"""
 
     best = np.array(best_pose_map[np.argmax(pose_output)])
     test_angle_percentage_diff, average_percentage_diff, score_angles, score_angles_unscaled, average_score = angle_comparer(keypoints_with_scores[0][0][:, :2], best)
@@ -279,10 +356,11 @@ labels_placeholder = st.empty()
 angle_perc = st.empty()
 timecount =  st.empty()
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 column1 = col1.empty()
 column2 = col2.empty()
 column3 = col3.empty()
+column4 = col4.empty()
 
 video_analysis_container = st.container()
 with video_analysis_container:
@@ -302,6 +380,8 @@ with video_analysis_container:
 st.markdown("<div style='text-align: center; color: grey;'>Copyright © The Hatha Team 2023</div>", unsafe_allow_html=True)
 
 
+
+
 while True:
     s_time = time.time()
     result = max(result_queue.get())
@@ -311,6 +391,14 @@ while True:
     average_score = total_score / window_size
 
     your_pose = max(set(pose_history))
+    your_pose = max(set(pose_history), key=pose_history.count)
+    current_pose, pose_start_time = update_pose_start_time_if_changed(current_pose, your_pose, pose_start_time)
+
+    threshold = 2
+    if time.time() - pose_start_time > threshold:
+        current_pose = find_next_pose_in_flow(your_pose, flow_list)
+        pose_start_time = time.time()
+
     fix_your = joint_dict[max(set(worst_name_history), key=worst_name_history.count)]
     your_score = get_score_eval(average_score)
 
@@ -332,3 +420,6 @@ while True:
 
     # # Show label and result in black
     column3.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: right; color:black;'>Fix your</p>\n<p style='font-size:30px; font-weight:bold; text-align: right; color:red;'>{fix_your}</p>", unsafe_allow_html=True)
+
+    column4.markdown("<p style='font-size:30px;'>Test Static Content</p>", unsafe_allow_html=True)
+    # column4.markdown(f"<p style='font-size:30px;'>Current Pose: {current_pose}</p>", unsafe_allow_html=True)
