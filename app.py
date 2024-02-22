@@ -58,13 +58,22 @@ pose = mp_pose.Pose(static_image_mode=False, model_complexity=1, smooth_landmark
 # Define necessary dictionaries
 label_mapping = {
     0: 'Downdog',
-    1: 'Goddess',
-    2: 'Plank',
-    3: 'Plank',
-    4: 'Tree',
-    5: 'Tree',
-    6: 'Warrior',
-    7: 'Warrior'}
+    1: 'Warrior (right)',
+    2: 'Warrior (left)',
+    3: 'Camel',
+    4: 'Dance (left)',
+    5: 'Tree_left',
+    6: 'Akarna (right)',
+    7: 'Akarna (left)',
+    8: 'Plow',
+    9: 'Goddess',
+    10: 'Tree (right)',
+    11: 'Plank',
+    12: 'Dance (right)',
+    13: 'Cobra',
+    14: 'Halfmoon (right)',
+    15: 'Halfmoon (left)'
+    }
 best_pose_map = {
     0: best_downdog,
     1: best_goddess,
@@ -268,6 +277,13 @@ def callback(frame):
     # Process the image with MediaPipe
     results = pose.process(image_rgb)
 
+    pose_output = get_pose(landmarks[0])
+    target_pose = label_mapping[np.argmax(pose_output)]
+    if (landmarks[0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
+        target_pose = "do a pose..."
+    print (pose_output)
+
+
     if results.pose_landmarks:
         # Extract landmarks for further processing
         landmarks = [[lmk.x, lmk.y, lmk.z] for lmk in results.pose_landmarks.landmark]
@@ -283,6 +299,14 @@ def callback(frame):
         mp.solutions.drawing_utils.draw_landmarks(
             annotated_image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
+
+        pose_output = get_pose(landmarks[0])
+        target_pose = label_mapping[np.argmax(pose_output)]
+        if (landmarks[0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
+            target_pose = "do a pose..."
+        print (pose_output)
+
+
         # Convert back to BGR for streaming
         processed_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
     else:
@@ -290,14 +314,14 @@ def callback(frame):
         processed_image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
     # """ ======== 2. Pose Prediction ======== """
-    pose_output = get_pose(landmarks[0])
-    target_pose = label_mapping[np.argmax(pose_output)]
-    if (landmarks[0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
-        target_pose = "do a pose..."
-    print (pose_output)
+
+
 
 
     return av.VideoFrame.from_ndarray(processed_image, format="bgr24")
+
+
+
 
     # # # The image gets resized to for interpreter and the array type changed to
     # # # float.
