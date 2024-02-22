@@ -12,6 +12,7 @@ import joblib
 import queue
 from collections import deque
 from streamlit_webrtc import webrtc_streamer
+import mediapipe as mp
 
 # Local imports
 from angle_comparer import angle_comparer
@@ -44,11 +45,15 @@ st.markdown(streamlit_style, unsafe_allow_html=True)
 # Centralize the title 'Hatha Project'
 st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Practice Session 🧘‍♀️</h1>", unsafe_allow_html=True)
 
-# Load Model and Scaler
-interpreter = tf.lite.Interpreter(model_path="model_creator/3.tflite")
-interpreter.allocate_tensors()
-model = tf.keras.models.load_model('model_creator/24112023_sub_model.h5')
-scaler = joblib.load('model_creator/scaler.pkl')
+# # Load Model and Scaler
+# interpreter = tf.lite.Interpreter(model_path="model_creator/3.tflite")
+# interpreter.allocate_tensors()
+# model = tf.keras.models.load_model('model_creator/24112023_sub_model.h5')
+# scaler = joblib.load('model_creator/scaler.pkl')
+
+# MediaPipe setup
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(static_image_mode=False, model_complexity=1, smooth_landmarks=True, enable_segmentation=False, smooth_segmentation=True, min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
 # Define necessary dictionaries
 label_mapping = {
@@ -241,11 +246,6 @@ avg_percentage_diff_history = deque(maxlen=window_size)
 worst_name_history = deque(maxlen=window_size)
 average_score_history = deque(maxlen=window_size)
 pose_history = deque(maxlen=window_size)
-flow_list = ['Goddess', 'Warrior', 'Downdog', 'Plank', 'Warrior']
-current_pose = None
-next_pose = None
-current_index = 0
-pose_start_time = time.time()
 
 # Defining the angle_comparer to create video and overlay
 def callback(frame):
@@ -253,89 +253,108 @@ def callback(frame):
     # the global command takes the created variables from outside the function
     # and makes them valid on the inside. All changes to them inside this
     # function will affect the variable outside the function as well.
-    global current_pose, next_pose, pose_start_time, worst_name_history, angle_diff_history, avg_percentage_diff_history, score_angles_history, average_score_history
+    global worst_name_history, angle_diff_history, avg_percentage_diff_history, score_angles_history, average_score_history
 
 
     s_time = time.time()
+
     """ ======== 1. Movenet to get Landmarks ======== """
 
-    # the variable image is an array depiction of the livestream feed frame in
-    # colour arrangement bgr24.
+
+     # Convert the frame to an array and then to RGB for MediaPipe processing
     image = frame.to_ndarray(format="bgr24")
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # The image gets resized to for interpreter and the array type changed to
-    # float.
-    img = tf.image.resize_with_pad(np.expand_dims(image, axis=0), 192, 192)
-    input_image = tf.cast(img, dtype=tf.float32)
+    # Process the image with MediaPipe
+    results = pose.process(image_rgb)
 
-    input_details = interpreter.get_input_details()
-    interpreter.set_tensor(input_details[0]["index"], input_image.numpy())
+    if results.pose_landmarks:
+        # Extract landmarks for further processing
+        landmarks = [[lmk.x, lmk.y, lmk.z] for lmk in results.pose_landmarks.landmark]
+        print(landmarks)
+        # Placeholder for adapted get_pose function, adjust according to your needs
+        # pose_output = get_pose(landmarks)
 
-    # Run inference
-    interpreter.invoke()
+        # Example: Use pose landmarks for further processing, like pose classification
+        # This is where you would integrate your pose classification logic based on the detected landmarks
 
-    # Get the output details and retrieve the keypoints with scores
-    output_details = interpreter.get_output_details()
-    keypoints_with_scores = interpreter.get_tensor(output_details[0]["index"])
-    # print(keypoints_with_scores[0][0][:, :2])
-    # print(type(keypoints_with_scores))
+        # Draw the pose annotations on the image (optional, for visualization)
+        annotated_image = image_rgb.copy()
+        mp.solutions.drawing_utils.draw_landmarks(
+            annotated_image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-    """ ======== 2. Pose Prediction ======== """
-    pose_output = get_pose(keypoints_with_scores[0][0])
-    target_pose = label_mapping[np.argmax(pose_output)]
-    if (keypoints_with_scores[0][0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
-        target_pose = "do a pose..."
+        # Convert back to BGR for streaming
+        processed_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
+    else:
+        # If no landmarks detected, just use the original RGB image
+        processed_image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
-    result_queue.put(target_pose)
-    pose_history.append(target_pose)
+    return av.VideoFrame.from_ndarray(processed_image, format="bgr24")
+
+    # # # The image gets resized to for interpreter and the array type changed to
+    # # # float.
+    # # img = tf.image.resize_with_pad(np.expand_dims(image, axis=0), 192, 192)
+    # # input_image = tf.cast(img, dtype=tf.float32)
+
+    # # input_details = interpreter.get_input_details()
+    # # interpreter.set_tensor(input_details[0]["index"], input_image.numpy())
+
+    # # # Run inference
+    # # interpreter.invoke()
+
+    # # # Get the output details and retrieve the keypoints with scores
+    # # output_details = interpreter.get_output_details()
+    # # keypoints_with_scores = interpreter.get_tensor(output_details[0]["index"])
+    # # print(keypoints_with_scores[0][0][:, :2])
+    # # print(type(keypoints_with_scores))
+
+    # """ ======== 2. Pose Prediction ======== """
+    # pose_output = get_pose(keypoints_with_scores[0][0])
+    # target_pose = label_mapping[np.argmax(pose_output)]
+    # if (keypoints_with_scores[0][0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
+    #     target_pose = "do a pose..."
+
+    # result_queue.put(target_pose)
+    # pose_history.append(target_pose)
     # print(pose_history)
 
 
-    """ ======== 3. Flow Indication ========"""
+    # """ ======== 3. Scoring of Pose ========"""
 
-    current_index, pose_start_time = flow_maker(current_index, pose_start_time, flow_list, threshold=2)
+    # best = np.array(best_pose_map[np.argmax(pose_output)])
+    # test_angle_percentage_diff, average_percentage_diff, score_angles, score_angles_unscaled, average_score = angle_comparer(keypoints_with_scores[0][0][:, :2], best)
 
-    current_pose = flow_list[current_index]
-    next_pose = flow_list[(current_index + 1) % len(flow_list)]
+    # best = np.array(best_pose_map[np.argmax(pose_output)])
+    # test_angle_percentage_diff, average_percentage_diff, score_angles, score_angles_unscaled, average_score = angle_comparer(keypoints_with_scores[0][0][:, :2], best)
+    # average_score = 1-sum(test_angle_percentage_diff)/len(test_angle_percentage_diff)
+    # index_of_worst = test_angle_percentage_diff.index(max(test_angle_percentage_diff))
+    # worst_points = lm_points[index_of_worst]
+    # result_queue.put(lm_list[index_of_worst])
+    # average_score_history.append(average_score)
 
+    # worst_kps = []
+    # for i in lm_points[index_of_worst]:
+    #     worst_kps.append((np.squeeze(keypoints_with_scores)[i]).tolist())
 
+    # worst_edges = {
+    # (worst_points[0], worst_points[1]): None,
+    # (worst_points[1], worst_points[2]): None,
+    # }
 
-    """ ======== 4. Scoring of Pose ========"""
+    # result_queue.put(worst_edges)
+    # # average_score_history.append(1-average_score)
+    # worst_name_history.append(lm_list[index_of_worst])
+    # # print(worst_name_history)
+    # # sliding_avg_score = np.mean(average_score_history, axis=0)
 
-    best = np.array(best_pose_map[np.argmax(pose_output)])
-    test_angle_percentage_diff, average_percentage_diff, score_angles, score_angles_unscaled, average_score = angle_comparer(keypoints_with_scores[0][0][:, :2], best)
+    # if np.max(pose_output) > 0.5 and np.max(pose_output) < 0.95:
+    #     # Draw the landmarks onto the image with threshold
+    #     draw_key_points(image, worst_kps, conf_threshold=0.2)
+    #     draw_connections(image, keypoints_with_scores, worst_edges, 0.2)
 
-    best = np.array(best_pose_map[np.argmax(pose_output)])
-    test_angle_percentage_diff, average_percentage_diff, score_angles, score_angles_unscaled, average_score = angle_comparer(keypoints_with_scores[0][0][:, :2], best)
-    average_score = 1-sum(test_angle_percentage_diff)/len(test_angle_percentage_diff)
-    index_of_worst = test_angle_percentage_diff.index(max(test_angle_percentage_diff))
-    worst_points = lm_points[index_of_worst]
-    result_queue.put(lm_list[index_of_worst])
-    average_score_history.append(average_score)
+    # mirrored_image = cv2.flip(image, 1)
 
-    worst_kps = []
-    for i in lm_points[index_of_worst]:
-        worst_kps.append((np.squeeze(keypoints_with_scores)[i]).tolist())
-
-    worst_edges = {
-    (worst_points[0], worst_points[1]): None,
-    (worst_points[1], worst_points[2]): None,
-    }
-
-    result_queue.put(worst_edges)
-    # average_score_history.append(1-average_score)
-    worst_name_history.append(lm_list[index_of_worst])
-    # print(worst_name_history)
-    # sliding_avg_score = np.mean(average_score_history, axis=0)
-
-    if np.max(pose_output) > 0.5 and np.max(pose_output) < 0.95:
-        # Draw the landmarks onto the image with threshold
-        draw_key_points(image, worst_kps, conf_threshold=0.2)
-        draw_connections(image, keypoints_with_scores, worst_edges, 0.2)
-
-    mirrored_image = cv2.flip(image, 1)
-
-    return av.VideoFrame.from_ndarray(mirrored_image, format="bgr24")
+    # return av.VideoFrame.from_ndarray(mirrored_image, format="bgr24")
 
 
 # ==================== Actual UI output =====================
@@ -349,18 +368,18 @@ best_all_poses = load_and_cache_image('mika_poses/all_poses.jpeg')
 
 # Container for Images
 images_container = st.container()
-with images_container:
-    st.image(best_all_poses, use_column_width=True)
+# with images_container:
+#     st.image(best_all_poses, use_column_width=True)
 
 labels_placeholder = st.empty()
 angle_perc = st.empty()
 timecount =  st.empty()
 
-col1, col2, col3, col4 = st.columns(4)
-column1 = col1.empty()
-column2 = col2.empty()
-column3 = col3.empty()
-column4 = col4.empty()
+# col1, col2, col3 = st.columns(3)
+# column1 = col1.empty()
+# column2 = col2.empty()
+# column3 = col3.empty()
+
 
 video_analysis_container = st.container()
 with video_analysis_container:
@@ -373,7 +392,6 @@ with video_analysis_container:
         },
         media_stream_constraints={"video": True, "audio": False}  # Disable audio
     )
-
 
 
 # Add the footer with copyright information
@@ -392,15 +410,16 @@ while True:
 
     your_pose = max(set(pose_history))
     your_pose = max(set(pose_history), key=pose_history.count)
-    current_pose, pose_start_time = update_pose_start_time_if_changed(current_pose, your_pose, pose_start_time)
 
-    threshold = 2
-    if time.time() - pose_start_time > threshold:
-        current_pose = find_next_pose_in_flow(your_pose, flow_list)
-        pose_start_time = time.time()
+    # current_pose, pose_start_time = update_pose_start_time_if_changed(current_pose, your_pose, pose_start_time)
 
-    fix_your = joint_dict[max(set(worst_name_history), key=worst_name_history.count)]
-    your_score = get_score_eval(average_score)
+    # threshold = 2
+    # if time.time() - pose_start_time > threshold:
+    #     current_pose = find_next_pose_in_flow(your_pose, flow_list)
+    #     pose_start_time = time.time()
+
+    # fix_your = joint_dict[max(set(worst_name_history), key=worst_name_history.count)]
+    # your_score = get_score_eval(average_score)
 
     # If statements for the text colours
     if average_score <= 0.6:
@@ -413,13 +432,13 @@ while True:
         result = "perfect!"
         result_color = "green"
 
-    column1.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: left; color:black;'>Pose</p>\n<p style='font-size:30px; font-weight:bold; text-align: left; color:black;'>{your_pose}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: left; color:black;'>Pose</p>\n<p style='font-size:30px; font-weight:bold; text-align: left; color:black;'>{your_pose}</p>", unsafe_allow_html=True)
 
-    # Show label and result in black
-    column2.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: center; color:black;'>Score</p>\n<p style='font-size:30px; font-weight:bold; text-align: center; color:{result_color};'>{result}</p>", unsafe_allow_html=True)
+
+    # column1.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: left; color:black;'>Pose</p>\n<p style='font-size:30px; font-weight:bold; text-align: left; color:black;'>{your_pose}</p>", unsafe_allow_html=True)
 
     # # Show label and result in black
-    column3.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: right; color:black;'>Fix your</p>\n<p style='font-size:30px; font-weight:bold; text-align: right; color:red;'>{fix_your}</p>", unsafe_allow_html=True)
+    # column2.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: center; color:black;'>Score</p>\n<p style='font-size:30px; font-weight:bold; text-align: center; color:{result_color};'>{result}</p>", unsafe_allow_html=True)
 
-    column4.markdown("<p style='font-size:30px;'>Test Static Content</p>", unsafe_allow_html=True)
-    # column4.markdown(f"<p style='font-size:30px;'>Current Pose: {current_pose}</p>", unsafe_allow_html=True)
+    # Show label and result in black
+    # column3.markdown(f"<p style='font-size:30px; text-decoration: underline; text-align: right; color:black;'>Fix your</p>\n<p style='font-size:30px; font-weight:bold; text-align: right; color:red;'>{fix_your}</p>", unsafe_allow_html=True)

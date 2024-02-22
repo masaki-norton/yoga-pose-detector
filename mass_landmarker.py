@@ -83,7 +83,7 @@ columns_to_modify = df_all.columns[df_all.columns.str.contains(pattern)]
 df_all[columns_to_modify] = df_all[columns_to_modify].applymap(sigmoid)
 
 # Creating the csv for the DL Training
-df_all.to_csv("pose_landmark_data_10.csv", index=False)
+df_all.to_csv("pose_landmark_data.csv", index=False)
 
 
 # The path to the directory containing the folders
