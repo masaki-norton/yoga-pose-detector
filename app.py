@@ -43,13 +43,13 @@ streamlit_style = """
 st.markdown(streamlit_style, unsafe_allow_html=True)
 
 # Centralize the title 'Hatha Project'
-st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Practice Session 🧘‍♀️</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: black;'>🧘‍♀️ Yoga Pose Predictor 🧘‍♀️</h1>", unsafe_allow_html=True)
 
 # # Load Model and Scaler
-# interpreter = tf.lite.Interpreter(model_path="model_creator/3.tflite")
+# interpreter = tf.lite.Interpreter(model_path="nn.tflite")
 # interpreter.allocate_tensors()
-# model = tf.keras.models.load_model('model_creator/24112023_sub_model.h5')
-# scaler = joblib.load('model_creator/scaler.pkl')
+model = tf.keras.models.load_model('nn.keras')
+scaler = joblib.load('model_creator/scaler.pkl')
 
 # MediaPipe setup
 mp_pose = mp.solutions.pose
@@ -58,13 +58,22 @@ pose = mp_pose.Pose(static_image_mode=False, model_complexity=1, smooth_landmark
 # Define necessary dictionaries
 label_mapping = {
     0: 'Downdog',
-    1: 'Goddess',
-    2: 'Plank',
-    3: 'Plank',
-    4: 'Tree',
-    5: 'Tree',
-    6: 'Warrior',
-    7: 'Warrior'}
+    1: 'Warrior (right)',
+    2: 'Warrior (left)',
+    3: 'Camel',
+    4: 'Dance (left)',
+    5: 'Tree_left',
+    6: 'Akarna (right)',
+    7: 'Akarna (left)',
+    8: 'Plow',
+    9: 'Goddess',
+    10: 'Tree (right)',
+    11: 'Plank',
+    12: 'Dance (right)',
+    13: 'Cobra',
+    14: 'Halfmoon (right)',
+    15: 'Halfmoon (left)'
+    }
 best_pose_map = {
     0: best_downdog,
     1: best_goddess,
@@ -145,7 +154,7 @@ def draw_key_points(frame, keypoints, conf_threshold):
 
 
 # This function draws lines between the key bodyparts. In the live video, only the
-# bodyparts that constructi the worst angle are shown.
+# bodyparts that construct the worst angle are shown.
 def draw_connections(frame, keypoints, edges, confidence_threshold):
     max_dim = max(frame.shape)
     shaped = np.squeeze(np.multiply(keypoints, [max_dim,max_dim,1]))
@@ -163,10 +172,10 @@ def draw_connections(frame, keypoints, edges, confidence_threshold):
 def get_pose(landmarks: list):
 
     # Preparation of input before feeding the model.
-    lms_51 = np.array(landmarks).reshape(51).tolist()
-    landmarks_array = np.array(lms_51).reshape(1, -1)
-    landmarks_array = np.delete(landmarks_array, np.arange(2, landmarks_array.size, 3))
-    landmarks_array = landmarks_array[np.newaxis, :]
+    lms_99 = np.array(landmarks).reshape(99).tolist()
+    landmarks_array = np.array(lms_99).reshape(1, -1)
+    # landmarks_array = np.delete(landmarks_array, np.arange(2, landmarks_array.size, 3))
+    # landmarks_array = landmarks_array[np.newaxis, :]
     scaled_landmarks = scaler.transform(landmarks_array)
 
     # Feed landmarks_array to model to get softmax output.
@@ -258,7 +267,7 @@ def callback(frame):
 
     s_time = time.time()
 
-    """ ======== 1. Movenet to get Landmarks ======== """
+    """ ======== 1. Mediapipe to get Landmarks ======== """
 
 
      # Convert the frame to an array and then to RGB for MediaPipe processing
@@ -267,6 +276,13 @@ def callback(frame):
 
     # Process the image with MediaPipe
     results = pose.process(image_rgb)
+
+    pose_output = get_pose(landmarks[0])
+    target_pose = label_mapping[np.argmax(pose_output)]
+    if (landmarks[0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
+        target_pose = "do a pose..."
+    print (pose_output)
+
 
     if results.pose_landmarks:
         # Extract landmarks for further processing
@@ -283,13 +299,29 @@ def callback(frame):
         mp.solutions.drawing_utils.draw_landmarks(
             annotated_image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
+
+        pose_output = get_pose(landmarks[0])
+        target_pose = label_mapping[np.argmax(pose_output)]
+        if (landmarks[0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
+            target_pose = "do a pose..."
+        print (pose_output)
+
+
         # Convert back to BGR for streaming
         processed_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
     else:
         # If no landmarks detected, just use the original RGB image
         processed_image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
+    # """ ======== 2. Pose Prediction ======== """
+
+
+
+
     return av.VideoFrame.from_ndarray(processed_image, format="bgr24")
+
+
+
 
     # # # The image gets resized to for interpreter and the array type changed to
     # # # float.
@@ -308,11 +340,7 @@ def callback(frame):
     # # print(keypoints_with_scores[0][0][:, :2])
     # # print(type(keypoints_with_scores))
 
-    # """ ======== 2. Pose Prediction ======== """
-    # pose_output = get_pose(keypoints_with_scores[0][0])
-    # target_pose = label_mapping[np.argmax(pose_output)]
-    # if (keypoints_with_scores[0][0][:, 2]).min() < 0.1 or np.max(pose_output) < 0.90:
-    #     target_pose = "do a pose..."
+
 
     # result_queue.put(target_pose)
     # pose_history.append(target_pose)
