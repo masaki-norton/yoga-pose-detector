@@ -1,0 +1,9 @@
+1. Create pose extraction tool from model explore notebook.
+  This should be a callable function that takes an image and returns key points.
+  The actual building of the df can be done within the notebook. This function
+  can then be used within the actual app itself.
+
+2. Create df out of all the images and train a NN model based on that df.
+  This NN model should be able to predict the pose based on the KPs provided.
+
+3. Build a streamlit front end.
