@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from best_poses import *
 
 # constants
 VERTICES = {
@@ -41,6 +42,26 @@ ANGLES_TO_CHECK = {
     'revolved_triangle': ['right_shoulder', 'left_shoulder', 'left_elbow', 'right_elbow', 'left_hip', 'right_hip', 'left_knee', 'right_knee'],
     'cobra': ['right_shoulder', 'left_shoulder', 'left_elbow', 'right_elbow', 'left_hip', 'right_hip', 'left_knee', 'right_knee']
 }
+SAMPLE_BEST_DOWNDOG = [
+    [0.6849415 , 0.4385808 , 0.47379467],
+    [0.6847934 , 0.4198386 , 0.475131  ],
+    [0.68384135, 0.42276525, 0.62527484],
+    [0.65603083, 0.40431318, 0.57396674],
+    [0.6483914 , 0.40910396, 0.45509106],
+    [0.61763614, 0.436769  , 0.67206794],
+    [0.60486054, 0.43210745, 0.6128188 ],
+    [0.71399164, 0.36302376, 0.6027485 ],
+    [0.67569697, 0.35926113, 0.49042264],
+    [0.7741585 , 0.28499505, 0.6505081 ],
+    [0.72596705, 0.2903945 , 0.29765126],
+    [0.42484543, 0.6065925 , 0.855795  ],
+    [0.42545247, 0.6065874 , 0.82244235],
+    [0.5925844 , 0.683898  , 0.78402096],
+    [0.591881  , 0.68931067, 0.640119  ],
+    [0.7363759 , 0.7676759 , 0.7926514 ],
+    [0.71737164, 0.75531054, 0.57859325],
+]
+
 
 # helper method to get angle out of points a, b, and c which are np.arrays
 def get_one_angle(a, b, c):
@@ -50,5 +71,13 @@ def get_one_angle(a, b, c):
     return np.degrees(np.arccos(cosine_angle))
 
 # main function to retreive all relevant angles for a pose
-def get_all_angles(landmarks: list, pose: str) -> list:
+def get_all_angles(landmarks, pose: str) -> list:
     angles = []
+    to_check = ANGLES_TO_CHECK[pose] #names of key points, ex: right_shoulder
+    for vertex in to_check:
+        temp = landmarks[VERTICES[vertex]] #this is the 3 (x,y) of relevant kp, per vertex
+        a = np.array(temp[0:2])
+        b = np.array(temp[2:4])
+        c = np.array(temp[4:])
+        angles.append(get_one_angle(a,b,c))
+    return angles
