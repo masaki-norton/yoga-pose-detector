@@ -22,7 +22,7 @@ Yoga Pose Detector is a Yoga pose correction tool that recognizes the Yoga pose 
     ```
 
 ## Built With
-- [Tensorflow Movenet](https://www.tensorflow.org/hub/tutorials/movenet) - Human pose estimation
+- [MediaPipe Studio](https://mediapipe-studio.webapps.google.com/studio/demo/pose_landmarker) - Human pose estimation
 - [Keras](https://keras.io/) - Neural Network (via Tensorflow)
 - [WebRTC](https://webrtc.org/) - potential Online livestream
 - [OpenCV](https://opencv.org/) - Overlay of livestream
