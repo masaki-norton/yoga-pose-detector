@@ -18,7 +18,7 @@ def get_landmarks(image: np.ndarray) -> list[float]:
         return None
 
 def main() -> None:
-    image_path = "clean_data/TRAIN/downdog/00000128.jpg"
+    image_path = "clean_data/TEST_TRAIN/downdog/00000128.jpg"
     image = cv2.imread(image_path)
     print(get_landmarks(image))
     return None
