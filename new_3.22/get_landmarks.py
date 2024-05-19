@@ -12,7 +12,8 @@ def get_landmarks(image: np.ndarray) -> list[float]:
     if results.pose_landmarks:
         landmarks = []
         for lmk in results.pose_landmarks.landmark:
-            landmarks.extend([lmk.x, lmk.y, lmk.z, lmk.visibility])
+            # landmarks.extend([lmk.x, lmk.y, lmk.z, lmk.visibility])
+            landmarks.extend([lmk.x, lmk.y])
         return landmarks
     else:
         return None
