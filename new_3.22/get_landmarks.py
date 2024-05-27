@@ -22,6 +22,14 @@ def get_landmarks_simple(image: np.ndarray, pose) -> mp.solutions.pose.PoseLandm
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return pose.process(image_rgb)
 
+def get_landmarks_from_pose(results) -> list[float]:
+    landmarks = []
+    for lmk in results.pose_landmarks.landmark:
+        # landmarks.extend([lmk.x, lmk.y, lmk.z, lmk.visibility])
+        landmarks.extend([lmk.x, lmk.y])
+    return landmarks
+
+
 def main() -> None:
     image_path = "clean_data/TEST_TRAIN/downdog/00000128.jpg"
     image = cv2.imread(image_path)
