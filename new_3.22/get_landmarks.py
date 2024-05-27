@@ -18,6 +18,10 @@ def get_landmarks(image: np.ndarray) -> list[float]:
     else:
         return None
 
+def get_landmarks_simple(image: np.ndarray, pose) -> mp.solutions.pose.PoseLandmark:
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return pose.process(image_rgb)
+
 def main() -> None:
     image_path = "clean_data/TEST_TRAIN/downdog/00000128.jpg"
     image = cv2.imread(image_path)
